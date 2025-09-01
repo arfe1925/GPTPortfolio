@@ -14,33 +14,52 @@ privacy:
   include_identifiers_in_prompt: false   # do NOT send date/ticker
 
 prompt:
-  prefix_version: "v1"   # bump to invalidate provider’s static-prefix cache
+  prefix_version: "v2"   # bump when you revise text to invalidate cached prefixes
   system: |
-    You are an equity analyst. Score each category and the overall from 0 to 100.
-    ONLY use the tabular data provided. Do not use outside knowledge or guess the company or date.
-    Treat all entities as anonymized. Use z_adj as relative cross-section signals (higher is better).
-    Use raw values only for economic intuition. Return STRICT JSON only.
-  # A purely static "instructions" message so the provider can cache it.
+    You are a careful equity analyst. You must output **JSON only**, with the exact keys requested.
+    Use only the anonymized features provided in the message. Do not use outside knowledge or try to infer the company.
+    Treat any feature ending with `_z_adj` as a cross-sectional, direction-corrected z-score where **higher is better**.
+    Use raw values only as sanity checks (e.g., extreme leverage, negative margins) but base judgments primarily on `_z_adj`.
+    If a metric is missing, treat it as neutral and rely on the remaining signals for that bundle.
+    All scores must be integers from 0 to 100. The reasoning must be concise and ≤ {{rationale_char_limit}} characters.
+    Do not include explanations of your process; return only the requested JSON.
+
+  # Purely static instructions so the provider can cache them (bump prefix_version to invalidate).
   instructions: |
-    TASK:
-    - Score each category in 0–100 (integers).
-    - Score overall in 0–100 (integer).
-    - Provide a concise rationale (<= {{rationale_char_limit}} characters) using only this data.
-    RULES:
-    - If a bundle lacks data, note that explicitly and score conservatively.
-    - Output STRICT JSON only with this exact shape:
-      {"scores":{"valuation":int,"quality":int,"income":int,"balance":int,"technical":int,"overall":int},"reasoning": "string"}
-  # The data preamble that precedes the per-ticker JSON (still part of the dynamic message)
+    TASK
+    - Score each bundle (valuation, quality, income, balance, technical) with an integer 0–100.
+    - Score overall with an integer 0–100.
+    - Provide a concise reasoning string (≤ {{rationale_char_limit}} chars) using only the provided data.
+
+    SCORING GUIDELINES
+    - valuation: cheaper relative pricing → higher score (e.g., lower price_to_book_ratio_z_adj, price_to_sales_ratio_ttm_z_adj, ev_to_ebitda_z_adj, peg_z_adj ⇒ higher valuation).
+    - quality: sustainable profitability/efficiency → higher score (e.g., higher return_on_equity_roe_z_adj, return_on_assets_roa_z_adj, operating_margins_z_adj, gross_profit_margins_z_adj).
+    - income: shareholder cash returns that are sustainable → higher score (e.g., higher dividend_yield_ttm_z_adj helpful; extreme payout_ratio penalizes).
+    - balance: conservative leverage & strong liquidity → higher score (e.g., lower debt_to_equity_ratio_z_adj, higher current_ratio_z_adj & quick_ratio_z_adj).
+    - technical: constructive trend/position/volatility → higher score (e.g., higher moving_average_trend_z_adj, positive oscillator_z_adj, favorable position_within_monthly_range_z_adj).
+
+    RULES
+    - Use `_z_adj` metrics for relative positioning; they are already direction-corrected (higher is better).
+    - If a bundle is sparse/missing, score conservatively around neutral (~50) and rely on available signals.
+    - Ensure the overall score reflects a reasonable weighted blend of the five bundles; then clip to [0,100].
+
+    OUTPUT FORMAT (STRICT)
+    - Return JSON with exactly this shape and key names (no extra keys, no prose):
+      {"scores":{"valuation":int,"quality":int,"income":int,"balance":int,"technical":int,"overall":int},"reasoning":"string"}
+
+  # Static preface that precedes the per-ticker JSON blob.
   data_preamble: |
     DATA (tabular metrics; some fields may be missing by design):
+
   rationale_char_limit: 420
+
 
 # We’ll read category names and feature lists from config/preproc.yaml; no duplication here.
 
 model:
-  provider: "mock"                 # "mock" | "openai"
+  provider: "openai"                 # "mock" | "openai"
   openai:
-    api_key: "YOUR_OPENAI_API_KEY" # env OPENAI_API_KEY will override if present
+    api_key: "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" # env OPENAI_API_KEY will override if present
     base_url: null                 # null => default OpenAI
     model: "gpt-4o-mini"
     temperature: 0.1
@@ -48,7 +67,7 @@ model:
     timeout_s: 60
   batching:
     tickers_per_batch: 1
-    max_concurrent: 4
+    max_concurrent: 2
     retry: { tries: 2, backoff_s: 2 }
 
 caching:
