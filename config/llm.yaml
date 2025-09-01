@@ -1,0 +1,63 @@
+io:
+  preprocessed_csv: "outputs/panel_monthend_preprocessed.csv"
+  merged_out_csv:   "outputs/panel_monthend_with_llm.csv"
+  payload_dir:      "outputs/llm_payloads"
+  scores_dir:       "outputs/llm_scores"
+  cache_dir:        "outputs/llm_cache"
+
+selection:
+  require_eligible: true
+  start_date: null       # "YYYY-MM-DD" if you want to limit
+  end_date: null
+
+privacy:
+  include_identifiers_in_prompt: false   # do NOT send date/ticker
+
+prompt:
+  prefix_version: "v1"   # bump to invalidate provider’s static-prefix cache
+  system: |
+    You are an equity analyst. Score each category and the overall from 0 to 100.
+    ONLY use the tabular data provided. Do not use outside knowledge or guess the company or date.
+    Treat all entities as anonymized. Use z_adj as relative cross-section signals (higher is better).
+    Use raw values only for economic intuition. Return STRICT JSON only.
+  # A purely static "instructions" message so the provider can cache it.
+  instructions: |
+    TASK:
+    - Score each category in 0–100 (integers).
+    - Score overall in 0–100 (integer).
+    - Provide a concise rationale (<= {{rationale_char_limit}} characters) using only this data.
+    RULES:
+    - If a bundle lacks data, note that explicitly and score conservatively.
+    - Output STRICT JSON only with this exact shape:
+      {"scores":{"valuation":int,"quality":int,"income":int,"balance":int,"technical":int,"overall":int},"reasoning": "string"}
+  # The data preamble that precedes the per-ticker JSON (still part of the dynamic message)
+  data_preamble: |
+    DATA (tabular metrics; some fields may be missing by design):
+  rationale_char_limit: 420
+
+# We’ll read category names and feature lists from config/preproc.yaml; no duplication here.
+
+model:
+  provider: "mock"                 # "mock" | "openai"
+  openai:
+    api_key: "YOUR_OPENAI_API_KEY" # env OPENAI_API_KEY will override if present
+    base_url: null                 # null => default OpenAI
+    model: "gpt-4o-mini"
+    temperature: 0.1
+    max_tokens: 400
+    timeout_s: 60
+  batching:
+    tickers_per_batch: 1
+    max_concurrent: 4
+    retry: { tries: 2, backoff_s: 2 }
+
+caching:
+  local_response_cache: true
+  local_cache_ttl_days: 365
+  # provider prompt caching: we just keep "system" and "instructions" identical and separate.
+
+postprocess:
+  clamp_scores: [0, 100]
+  normalize_llm_scores: true
+  keep_raw_llm_scores: true
+  keep_reasoning: true

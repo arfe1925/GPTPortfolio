@@ -1,0 +1,21 @@
+io:
+  input_csv: "data/data.csv"                              # path to your uploaded CSV
+  output_panel_csv: "outputs/panel_monthend_raw.csv" # month-end raw panel (CSV)
+
+range:
+  start_date: null   # e.g., "2010-01-01"
+  end_date: null     # e.g., "2025-08-25"
+
+parsing:
+  tz: "UTC"
+  ticker_uppercase: true
+
+staleness:
+  # Forward-fill fundamentals using the most recent non-null observation
+  # per column and per (ticker, month_end). If the age of that observation
+  # is greater than this threshold (in days), set it to NaN.
+  max_fundamental_age_days: 200
+
+logging:
+  # Print coverage and stale-drop stats to stdout.
+    enabled: true

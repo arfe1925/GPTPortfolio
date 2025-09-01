@@ -1,0 +1,49 @@
+io:
+  backtest_base_config: "config/backtest.yaml"
+  out_dir: "outputs/gridsearch"
+  materialize_top_n: 5
+
+dates:
+  train_start: null
+  train_end: null
+  test_start: null
+  test_end: null
+
+universe:
+  require_eligible: true
+  min_names: 10
+
+# ==== SEARCH SPACE ====
+K_list: [5, 10]
+weighting_list: ["equal"] # "score_proportional"
+
+# LLM bundle weights to try (arrays of length 5: [valuation, quality, income, balance, technical])
+llm_bundle_weights:
+  - [0.20, 0.20, 0.20, 0.20, 0.20]   # equal
+  - [0.35, 0.20, 0.15, 0.10, 0.20]
+  # - [0.15, 0.25, 0.20, 0.20, 0.20]
+
+# Quant bundle weights to try (same order)
+quant_bundle_weights:
+  - [0.20, 0.20, 0.20, 0.20, 0.20]
+  - [0.35, 0.20, 0.15, 0.15, 0.15]
+
+# Overall LLM vs Quant weight pairs [w_llm, w_quant]
+overall_weights:
+  - [0.5, 0.5]
+  - [0.6, 0.4]
+
+frictions:
+  cost_bps_list: [20.0]
+  renormalize_on_missing: true
+
+evaluation:
+  metric_primary: "sharpe"
+  tiebreakers: ["cagr", "-ann_vol", "-turnover"]
+  rolling_windows_days: [252]
+  compute_ic: false
+  compute_quantiles: false
+
+caching:
+  enable: true
+  cache_dir: "outputs/gridsearch/cache"

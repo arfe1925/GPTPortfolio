@@ -1,0 +1,70 @@
+io:
+  fundamentals_csv: "outputs/panel_monthend_raw.csv"
+  technicals_csv:   "outputs/technicals_monthly_raw.csv"
+  output_csv:       "outputs/panel_monthend_preprocessed.csv"
+  stats_csv:        "outputs/preproc_stats.csv"
+
+persist:
+  keep_raw: true
+  emit_z_adj: true        # we compute plain z internally but do not save it
+
+winsorization:
+  method: "quantile"      # ["quantile","none"]
+  lower: 0.01
+  upper: 0.99
+
+standardization:
+  method: "zscore"        # within-month cross-section
+
+eligibility:
+  min_features_per_name: 3
+  drop_all_na_rows: true
+
+# Five top-level bundles (equal weights by default). Per-feature weights are equal and fixed.
+bundles:
+  valuation:
+    weight: 0.20
+    features:
+      - price_to_book_ratio
+      - price_to_sales_ratio_ttm
+  quality:
+    weight: 0.20
+    features:
+      - return_on_equity_roe
+      - return_on_assets_roa
+      - operating_margins
+      - ebitda_margins
+  income:
+    weight: 0.20
+    features:
+      - dividend_yield_ttm
+  balance:
+    weight: 0.20
+    features:
+      - debt_to_equity_ratio
+      - current_ratio_liquidity_measure
+      - quick_ratio_liquidity_measure
+  technical:
+    weight: 0.20
+    features:
+      - trend_price_to_simple_moving_average_12_ratio
+      - oscillator_relative_strength_index_14
+      - volatility_average_true_range_14_normalized
+      - market_strength_average_directional_index_14
+      - market_strength_moving_average_convergence_divergence_histogram
+      - position_within_monthly_range
+      - percent_distance_from_monthly_high
+      - percent_distance_from_monthly_low
+
+# Which features should be treated as "lower is better" before z-adjust
+lower_is_better:
+  - price_to_book_ratio
+  - price_to_sales_ratio_ttm
+  - debt_to_equity_ratio
+  - volatility_average_true_range_14
+  - volatility_average_true_range_14_normalized
+
+# Drop ONLY the raw H/L columns; keep HL-derived features above.
+drop_columns_from_inputs:
+  - monthly_high
+  - monthly_low

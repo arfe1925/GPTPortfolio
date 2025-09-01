@@ -1,0 +1,76 @@
+base_backtest_config:
+  io:
+    merged_llm_csv: outputs/panel_monthend_with_llm.csv
+    daily_prices_csv: data/data.csv
+    out_dir: outputs/backtest
+  universe:
+    require_eligible: true
+    min_names: 10
+  rebalancing:
+    frequency: monthly
+    trade_at: next_close
+    start_date: null
+    end_date: null
+  strategies:
+  - name: quant_topk
+    kind: topk
+    rank_by: score_quant_composite
+    K: 10
+    weighting: equal
+  - name: llm_topk
+    kind: topk
+    rank_by: llm_score_overall_0_100
+    K: 10
+    weighting: equal
+  - name: ensemble_topk
+    kind: ensemble_topk
+    components:
+    - type: zscore
+      column: score_quant_composite
+    - type: identity
+      column: llm_score_overall_z_adj
+    combine: weighted_mean
+    weights:
+    - 0.5
+    - 0.5
+    K: 10
+    weighting: equal
+  - name: llm_rerank_over_quant
+    kind: rerank
+    shortlist_by: score_quant_composite
+    K_pre: 20
+    rerank_by: llm_score_overall_0_100
+    K: 10
+    weighting: equal
+  frictions:
+    cost_bps: 20.0
+    renormalize_on_missing: true
+  reporting:
+    compute_ic: false
+    compute_quantiles: false
+    quantile_bins: 10
+    rolling_windows_days:
+    - 252
+strategy:
+  name: bw_K10_equal_LLM35_20_15_10_20_Q35_20_15_15_15_OV50_50_C20
+  kind: bundle_weighted
+  K: 10
+  weighting: equal
+  bundle_weights:
+    llm:
+      valuation: 0.35
+      quality: 0.2
+      income: 0.15
+      balance: 0.1
+      technical: 0.2
+    quant:
+      valuation: 0.35
+      quality: 0.2
+      income: 0.15
+      balance: 0.15
+      technical: 0.15
+    overall:
+      llm: 0.5
+      quant: 0.5
+frictions:
+  cost_bps: 20.0

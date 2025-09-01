@@ -1,0 +1,31 @@
+io:
+  input_csv: "data/data.csv"                      # same file as Sub-task 1
+  output_csv: "outputs/technicals_monthly_raw.csv"
+
+parsing:
+  tz: "UTC"
+  ticker_uppercase: true
+
+monthly:
+  close_col: "price"
+  high_col: "high_price_day"                 # set to null or remove if not available
+  low_col:  "low_price_day"                  # set to null or remove if not available
+
+indicators:
+  use_pandas_ta: true                        # required
+  trend:
+    type: "price_to_simple_moving_average_ratio"
+    sma_months: 12
+  oscillator:
+    type: "relative_strength_index"
+    period_months: 14
+  volatility:
+    type: "average_true_range"               # ATR(14) — requires monthly High/Low/Close
+    period_months: 14
+  market_strength:
+    primary:  { type: "average_directional_index", period_months: 14 }  # ADX(14), needs H/L/C
+    fallback: { type: "moving_average_convergence_divergence_histogram", fast: 12, slow: 26, signal: 9 }  # uses Close only
+
+high_low_features:
+  emit: true
+  range_zero_policy: "half"                  # "half" -> 0.5; "nan" -> NaN

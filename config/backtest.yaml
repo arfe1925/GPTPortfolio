@@ -1,0 +1,57 @@
+io:
+  merged_llm_csv: "outputs/panel_monthend_with_llm.csv"   # from LLM step
+  daily_prices_csv: "data/data.csv"                            # uses columns: date,ticker,price
+  out_dir: "outputs/backtest"
+
+universe:
+  require_eligible: true
+  min_names: 1
+
+rebalancing:
+  frequency: "monthly"       # fixed
+  trade_at: "next_close"     # ME_t -> trade at ME_t+1d close
+  start_date: null           # "YYYY-MM-DD" optional
+  end_date: null
+
+strategies:
+  - name: "quant_topk"
+    kind: "topk"
+    rank_by: "score_quant_composite"
+    K: 10
+    weighting: "equal"
+
+  - name: "llm_topk"
+    kind: "topk"
+    rank_by: "llm_score_overall_0_100"    # or "..._z_adj" via config
+    K: 10
+    weighting: "equal"
+
+  - name: "ensemble_topk"
+    kind: "ensemble_topk"
+    components:
+      - type: "zscore"       # z-score within eligible set at ME_t
+        column: "score_quant_composite"
+      - type: "identity"     # already cross-section-style
+        column: "llm_score_overall_z_adj"
+    combine: "weighted_mean" # ["mean","weighted_mean"]
+    weights: [0.5, 0.5]      # ✅ adjustable
+    K: 10
+    weighting: "equal"
+
+  - name: "llm_rerank_over_quant"
+    kind: "rerank"
+    shortlist_by: "score_quant_composite"
+    K_pre: 20
+    rerank_by: "llm_score_overall_0_100"
+    K: 10
+    weighting: "equal"
+
+frictions:
+  cost_bps: 20.0
+  renormalize_on_missing: true
+
+reporting:
+  compute_ic: true
+  compute_quantiles: true
+  quantile_bins: 10
+  rolling_windows_days: [63, 252]   # ~3m, ~12m on daily data
