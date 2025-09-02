@@ -1,7 +1,7 @@
 io:
   backtest_base_config: "config/backtest.yaml"
   out_dir: "outputs/gridsearch"
-  materialize_top_n: 5
+  materialize_top_n: 10
 
 dates:
   train_start: null
@@ -11,27 +11,36 @@ dates:
 
 universe:
   require_eligible: true
-  min_names: 10
+  min_names: 1
 
 # ==== SEARCH SPACE ====
 K_list: [5, 10]
-weighting_list: ["equal"] # "score_proportional"
+weighting_list: ["equal,score_proportional"] # "score_proportional"
 
 # LLM bundle weights to try (arrays of length 5: [valuation, quality, income, balance, technical])
 llm_bundle_weights:
   - [0.20, 0.20, 0.20, 0.20, 0.20]   # equal
   - [0.35, 0.20, 0.15, 0.10, 0.20]
+  - [0.25, 0.25, 0.15, 0.10, 0.25]
+  - [0.15, 0.15, 0.15, 0.25, 0.30]
+  - [0.15, 0.15, 0.20, 0.25, 0.25]
   # - [0.15, 0.25, 0.20, 0.20, 0.20]
 
 # Quant bundle weights to try (same order)
 quant_bundle_weights:
-  - [0.20, 0.20, 0.20, 0.20, 0.20]
-  - [0.35, 0.20, 0.15, 0.15, 0.15]
+  - [0.20, 0.20, 0.20, 0.20, 0.20]   # equal
+  - [0.35, 0.20, 0.15, 0.10, 0.20]
+  - [0.25, 0.25, 0.15, 0.10, 0.25]
+  - [0.15, 0.15, 0.15, 0.25, 0.30]
+  - [0.15, 0.15, 0.20, 0.25, 0.25]
 
 # Overall LLM vs Quant weight pairs [w_llm, w_quant]
 overall_weights:
   - [0.5, 0.5]
   - [0.6, 0.4]
+  - [0.7, 0.3]
+  - [0.3, 0.7]
+  - [0.4, 0.6]
 
 frictions:
   cost_bps_list: [20.0]

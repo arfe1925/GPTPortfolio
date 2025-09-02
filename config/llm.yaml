@@ -14,7 +14,7 @@ privacy:
   include_identifiers_in_prompt: false   # do NOT send date/ticker
 
 prompt:
-  prefix_version: "v2"   # bump when you revise text to invalidate cached prefixes
+  prefix_version: "v3"   # bump to invalidate cached prefixes
   system: |
     You are a careful equity analyst. You must output **JSON only**, with the exact keys requested.
     Use only the anonymized features provided in the message. Do not use outside knowledge or try to infer the company.
@@ -22,14 +22,14 @@ prompt:
     Use raw values only as sanity checks (e.g., extreme leverage, negative margins) but base judgments primarily on `_z_adj`.
     If a metric is missing, treat it as neutral and rely on the remaining signals for that bundle.
     All scores must be integers from 0 to 100. The reasoning must be concise and ≤ {{rationale_char_limit}} characters.
-    Do not include explanations of your process; return only the requested JSON.
+    Do **not** mention or imply the company name, ticker (e.g., “.IS”), industry, geography, or any dates.
+    Do **not** make predictions or recommendations. Do **not** explain your process. Return only the requested JSON.
 
-  # Purely static instructions so the provider can cache them (bump prefix_version to invalidate).
   instructions: |
     TASK
     - Score each bundle (valuation, quality, income, balance, technical) with an integer 0–100.
     - Score overall with an integer 0–100.
-    - Provide a concise reasoning string (≤ {{rationale_char_limit}} chars) using only the provided data.
+    - Provide a single-sentence reasoning (≤ {{rationale_char_limit}} chars) using only the provided data.
 
     SCORING GUIDELINES
     - valuation: cheaper relative pricing → higher score (e.g., lower price_to_book_ratio_z_adj, price_to_sales_ratio_ttm_z_adj, ev_to_ebitda_z_adj, peg_z_adj ⇒ higher valuation).
@@ -41,17 +41,18 @@ prompt:
     RULES
     - Use `_z_adj` metrics for relative positioning; they are already direction-corrected (higher is better).
     - If a bundle is sparse/missing, score conservatively around neutral (~50) and rely on available signals.
-    - Ensure the overall score reflects a reasonable weighted blend of the five bundles; then clip to [0,100].
+    - Avoid listing metric names in the reasoning; summarize **themes** (cheap/expensive, strong/weak profitability, low/high leverage, trend improving/weak).
+    - Keep the reasoning **one sentence**, neutral tone, no lists/bullets, no boilerplate openings (avoid “Overall,” “In summary,” “Appears,” etc.), and avoid repeating the same phrasing across cases.
+    - No forward-looking language (e.g., “will,” “expected to”). No proper nouns, tickers, industries, geographies, or dates.
 
     OUTPUT FORMAT (STRICT)
     - Return JSON with exactly this shape and key names (no extra keys, no prose):
       {"scores":{"valuation":int,"quality":int,"income":int,"balance":int,"technical":int,"overall":int},"reasoning":"string"}
 
-  # Static preface that precedes the per-ticker JSON blob.
   data_preamble: |
     DATA (tabular metrics; some fields may be missing by design):
 
-  rationale_char_limit: 420
+  rationale_char_limit: 300
 
 
 # We’ll read category names and feature lists from config/preproc.yaml; no duplication here.
@@ -59,16 +60,16 @@ prompt:
 model:
   provider: "openai"                 # "mock" | "openai"
   openai:
-    api_key: "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" # env OPENAI_API_KEY will override if present
+    api_key: "" # env OPENAI_API_KEY will override if present
     base_url: null                 # null => default OpenAI
     model: "gpt-4o-mini"
     temperature: 0.1
-    max_tokens: 400
+    max_tokens: 300
     timeout_s: 60
   batching:
     tickers_per_batch: 1
-    max_concurrent: 2
-    retry: { tries: 2, backoff_s: 2 }
+    max_concurrent: 7
+    retry: { tries: 3, backoff_s: 3 }
 
 caching:
   local_response_cache: true

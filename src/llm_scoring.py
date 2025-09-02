@@ -23,8 +23,8 @@ def _filter_panel(df: pd.DataFrame, llm_cfg: Dict) -> pd.DataFrame:
     return df.sort_values(["date","ticker"]).reset_index(drop=True)
 
 def _cache_paths(llm_cfg: Dict, month: str) -> Tuple[str,str]:
-    payload_path = os.path.join(llm_cfg["io"]["payload_dir"], f"{month}.jsonl")
-    scores_path  = os.path.join(llm_cfg["io"]["scores_dir"],  f"{month}.jsonl")
+    payload_path = os.path.join(llm_cfg["io"]["payload_dir"], f"{month}.json")
+    scores_path  = os.path.join(llm_cfg["io"]["scores_dir"],  f"{month}.json")
     return payload_path, scores_path
 
 def _local_cache_get(cache_dir: str, cache_key: str) -> dict | None:

@@ -8,7 +8,7 @@ stages:
 
 inputs:
   data_config: "config/data.yaml"
-  technicals_config: "config/technicals.yaml"
+  technicals_config: "config/techinicals.yaml"
   preproc_config: "config/preproc.yaml"
   llm_config: "config/llm.yaml"
   backtest_config: "config/backtest.yaml"
@@ -23,10 +23,10 @@ overrides:
     strategy_source: "grid_best"   # "config" | "grid_best"
     grid_best_path: "outputs/gridsearch/best_full.yaml"   # used when strategy_source=grid_best
   gridsearch:
-    materialize_top_n: 5        # override if you want
+    materialize_top_n: 10        # override if you want
 
 # Global convenience
 resume:
-  skip_existing_outputs: false   # skip steps if their outputs already exist
+  skip_existing_outputs: true   # skip steps if their outputs already exist
 logging:
   level: "info"                 # "silent" | "warn" | "info" | "debug"
