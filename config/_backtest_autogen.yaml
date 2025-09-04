@@ -1,0 +1,43 @@
+io:
+  merged_llm_csv: outputs/panel_monthend_with_llm.csv
+  daily_prices_csv: data/data.csv
+  out_dir: outputs/backtest
+universe:
+  require_eligible: true
+  min_names: 1
+rebalancing:
+  frequency: monthly
+  trade_at: next_close
+  start_date: null
+  end_date: null
+strategies:
+- name: bw_K10_equal,score_proportional_LLM25_25_15_10_25_Q35_20_15_10_20_OV70_30_C20
+  kind: bundle_weighted
+  K: 10
+  weighting: equal,score_proportional
+  bundle_weights:
+    llm:
+      valuation: 0.25
+      quality: 0.25
+      income: 0.15
+      balance: 0.1
+      technical: 0.25
+    quant:
+      valuation: 0.35
+      quality: 0.2
+      income: 0.15
+      balance: 0.1
+      technical: 0.2
+    overall:
+      llm: 0.7
+      quant: 0.3
+frictions:
+  cost_bps: 20.0
+  renormalize_on_missing: true
+reporting:
+  compute_ic: true
+  compute_quantiles: true
+  quantile_bins: 10
+  rolling_windows_days:
+  - 63
+  - 252

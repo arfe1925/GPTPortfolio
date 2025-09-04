@@ -1,0 +1,1 @@
+{"scores": {"valuation": 0, "quality": 50, "income": 50, "balance": 50, "technical": 40, "overall": 38}, "reasoning": "Valuation is extremely poor with a high price-to-book ratio z-score. Quality, income, and balance metrics are missing, so scored neutral. Technicals show a negative trend with a low position within the monthly range, leading to a low score."}
