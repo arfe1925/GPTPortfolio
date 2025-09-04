@@ -2,9 +2,9 @@ stages:
   fundamentals: false
   technicals: false
   preproc: false
-  llm_scoring: true
-  backtest: false
-  gridsearch: false
+  llm_scoring: false
+  backtest: true
+  gridsearch: true
 
 inputs:
   data_config: "config/data.yaml"

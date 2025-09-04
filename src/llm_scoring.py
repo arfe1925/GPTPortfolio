@@ -23,6 +23,7 @@ def _filter_panel(df: pd.DataFrame, llm_cfg: Dict) -> pd.DataFrame:
     return df.sort_values(["date","ticker"]).reset_index(drop=True)
 
 def _cache_paths(llm_cfg: Dict, month: str) -> Tuple[str,str]:
+    # JSONL: one JSON object per line (audit/monitoring friendly)
     payload_path = os.path.join(llm_cfg["io"]["payload_dir"], f"{month}.json")
     scores_path  = os.path.join(llm_cfg["io"]["scores_dir"],  f"{month}.json")
     return payload_path, scores_path
@@ -52,6 +53,9 @@ def _normalize_month_z(df_scores: pd.DataFrame, cols_0_100: List[str]) -> pd.Dat
 
 def run_llm_scoring(preproc_csv: str, preproc_cfg_path: str, llm_cfg_path: str) -> pd.DataFrame:
     llm_cfg = _load_cfg(llm_cfg_path)
+    cache_only = bool(llm_cfg.get("caching", {}).get("cache_only", False) or os.getenv("LLM_CACHE_ONLY") == "1")
+    if cache_only:
+        print("[llm] cache-only mode: will skip API calls and use cache where available")
     pre_df = pd.read_csv(preproc_csv)
     pre_df["date"] = pd.to_datetime(pre_df["date"], utc=True).dt.tz_convert(None)
 
@@ -81,8 +85,11 @@ def run_llm_scoring(preproc_csv: str, preproc_cfg_path: str, llm_cfg_path: str) 
         month_scores = []
         for it in items:
             cached = _local_cache_get(llm_cfg["io"]["cache_dir"], it["cache_key"]) if llm_cfg["caching"]["local_response_cache"] else None
+            # Skip API call entirely in cache-only mode (row remains unscored)
+            if cached is None and cache_only:
+                continue
+            # call provider
             if cached is None:
-                # call provider
                 if provider == "mock":
                     # deterministic seed from cache_key for reproducibility
                     seed = int(hashlib.sha256(it["cache_key"].encode()).hexdigest()[:8], 16)

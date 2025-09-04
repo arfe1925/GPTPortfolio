@@ -24,7 +24,7 @@ llm_bundle_weights:
   - [0.25, 0.25, 0.15, 0.10, 0.25]
   - [0.15, 0.15, 0.15, 0.25, 0.30]
   - [0.15, 0.15, 0.20, 0.25, 0.25]
-  # - [0.15, 0.25, 0.20, 0.20, 0.20]
+  - [0.15, 0.25, 0.20, 0.20, 0.20]
 
 # Quant bundle weights to try (same order)
 quant_bundle_weights:
@@ -33,6 +33,7 @@ quant_bundle_weights:
   - [0.25, 0.25, 0.15, 0.10, 0.25]
   - [0.15, 0.15, 0.15, 0.25, 0.30]
   - [0.15, 0.15, 0.20, 0.25, 0.25]
+  - [0.15, 0.25, 0.20, 0.20, 0.20]
 
 # Overall LLM vs Quant weight pairs [w_llm, w_quant]
 overall_weights:
@@ -41,6 +42,8 @@ overall_weights:
   - [0.7, 0.3]
   - [0.3, 0.7]
   - [0.4, 0.6]
+  - [0, 1]
+  - [1, 0]
 
 frictions:
   cost_bps_list: [20.0]

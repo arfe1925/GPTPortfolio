@@ -68,12 +68,13 @@ model:
     timeout_s: 60
   batching:
     tickers_per_batch: 1
-    max_concurrent: 7
+    max_concurrent: 8
     retry: { tries: 3, backoff_s: 3 }
 
 caching:
   local_response_cache: true
   local_cache_ttl_days: 365
+  cache_only: true
   # provider prompt caching: we just keep "system" and "instructions" identical and separate.
 
 postprocess:
